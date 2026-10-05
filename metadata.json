@@ -1,0 +1,6 @@
+{
+  "name": "Fight Pulse — Real-Time Boxing Intelligence Platform",
+  "description": "The premier real-time boxing intelligence platform. Real fights, real data, real-time momentum, odds tracking, and fight analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
