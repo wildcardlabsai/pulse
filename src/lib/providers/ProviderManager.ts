@@ -57,10 +57,11 @@ export class ProviderManager
     this.telemetryAdapter = new CompuboxTelemetryAdapter();
 
     // Auto-detect if live credentials are provided in environment
+    // Live mode is opt-in via VITE_ENABLE_LIVE_DATA=true (API keys themselves live server-side)
+    const liveEnabled = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ENABLE_LIVE_DATA === 'true';
     const hasSportradar = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SPORTRADAR_API_KEY;
-    const hasTheOdds = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_THE_ODDS_API_KEY;
 
-    if (hasSportradar || hasTheOdds) {
+    if (liveEnabled || hasSportradar) {
       this.environmentMode = 'LIVE_PROVIDER';
     } else {
       this.environmentMode = 'DEVELOPMENT_FIXTURE';
@@ -97,8 +98,8 @@ export class ProviderManager
         this.telemetryAdapter.getConfigurationStatus()
       ],
       requiredCredentialsSummary: [
-        { key: 'VITE_SPORTRADAR_API_KEY', purpose: 'Live fighter profiles, schedules & records' },
-        { key: 'VITE_THE_ODDS_API_KEY', purpose: 'Real-time bookmaker odds & lines' }
+        { key: 'VITE_ENABLE_LIVE_DATA', purpose: 'Set to "true" to switch from fixtures to live providers' },
+        { key: 'THE_ODDS_API_KEY', purpose: 'Real-time bookmaker odds (server-side, via /api/odds)' }
       ]
     };
   }
@@ -190,7 +191,10 @@ export class ProviderManager
 
   async getOddsForFight(fightId: string): Promise<BookmakerPrice[]> {
     if (!this.isFixtureMode()) {
-      const liveOdds = await this.oddsAdapter.getOddsForFight(fightId);
+      const fight = await this.fixtureProvider.getFightById(fightId);
+      const liveOdds = fight
+        ? await this.oddsAdapter.getOddsForFight(fightId, fight.fighterA.name, fight.fighterB.name)
+        : [];
       if (liveOdds.length > 0) return liveOdds;
     }
     return this.fixtureProvider.getOddsForFight(fightId);

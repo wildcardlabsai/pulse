@@ -37,7 +37,7 @@ class FightPulseSupabaseService {
       }
       if (typeof process !== 'undefined' && process.env) {
         if (process.env[key]) return process.env[key];
-        if (process.env[`VITE_${key}`]) return process.env[`VITE_${key}`];
+        if (process.env[`VITE_${key}`]) return process.env[`VITE_${key}`] ?? null;
       }
       return null;
     };

@@ -182,7 +182,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({ isOpen, onCl
                     <div className="flex items-center justify-between p-2 bg-[#12161E] rounded border border-slate-800">
                       <div>
                         <div className="text-white font-bold">The Odds API</div>
-                        <div className="text-[10px] text-slate-400">VITE_THE_ODDS_API_KEY</div>
+                        <div className="text-[10px] text-slate-400">THE_ODDS_API_KEY (server) + VITE_ENABLE_LIVE_DATA</div>
                       </div>
                       <span className="text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
                         AWAITING KEY
