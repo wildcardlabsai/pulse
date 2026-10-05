@@ -25,6 +25,7 @@ import {
 import { FixtureDataProvider } from './FixtureDataProvider';
 import { SportradarBoxingAdapter } from './adapters/SportradarBoxingAdapter';
 import { TheOddsApiAdapter } from './adapters/TheOddsApiAdapter';
+import { fetchDbFighters, fetchDbFighterById } from '../supabase/fighterRepository';
 import { CompuboxTelemetryAdapter } from './adapters/CompuboxTelemetryAdapter';
 import { ingestionEngine } from '../ingestion/IngestionEngine';
 import { DataQualityValidator } from '../validation/dataQuality';
@@ -144,23 +145,28 @@ export class ProviderManager
 
   // --- IFighterDataProvider ---
   async getAllFighters(): Promise<Fighter[]> {
-    if (this.isFixtureMode()) {
-      return this.fixtureProvider.getAllFighters();
-    }
-    const fighters = await this.sportradarAdapter.getAllFighters();
-    return fighters.length > 0 ? fighters : this.fixtureProvider.getAllFighters();
+    const fixtures = await this.fixtureProvider.getAllFighters();
+    if (this.isFixtureMode()) return fixtures;
+    const external = [...(await this.sportradarAdapter.getAllFighters()), ...(await fetchDbFighters())];
+    return this.mergeFighters(fixtures, external);
   }
 
   async getFighterById(id: string): Promise<Fighter | null> {
-    if (this.isFixtureMode()) {
-      return this.fixtureProvider.getFighterById(id);
-    }
-    const fighter = await this.sportradarAdapter.getFighterById(id);
-    return fighter || this.fixtureProvider.getFighterById(id);
+    const fixture = await this.fixtureProvider.getFighterById(id);
+    if (fixture || this.isFixtureMode()) return fixture;
+    return (await fetchDbFighterById(id)) || (await this.sportradarAdapter.getFighterById(id));
   }
 
   async searchFighters(query: string): Promise<Fighter[]> {
-    return this.fixtureProvider.searchFighters(query);
+    const fixtures = await this.fixtureProvider.searchFighters(query);
+    if (this.isFixtureMode()) return fixtures;
+    return this.mergeFighters(fixtures, await fetchDbFighters(query, 50));
+  }
+
+  // Curated fixtures win over database rows with the same name
+  private mergeFighters(primary: Fighter[], extra: Fighter[]): Fighter[] {
+    const seen = new Set(primary.map(f => f.name.toLowerCase()));
+    return [...primary, ...extra.filter(f => !seen.has(f.name.toLowerCase()))];
   }
 
   // --- IEventDataProvider ---
